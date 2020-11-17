@@ -58,8 +58,8 @@ public class PingEndpointConfiguration {
         .transformDeferred(disabled.test(request) ? Function.identity() : BulkheadOperator.of(bulkhead))
         .flatMap(pong -> ServerResponse.ok().bodyValue(pong))
         .onErrorResume(BulkheadFullException.class, error -> ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE).build())
-        .subscribeOn(Schedulers.newSingle("single-scheduler"))
-        .doOnSubscribe(subscription -> log.info("Handle ping request with correlation : '{}'", request.queryParam("correlation").orElse("unknown")));
+        .doOnSubscribe(subscription -> log.info("Handle ping request with correlation : '{}'", request.queryParam("correlation").orElse("unknown")))
+        .subscribeOn(Schedulers.single());
 
     return RouterFunctions.route(predicate, handler);
   }

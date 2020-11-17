@@ -61,17 +61,7 @@ class PingEndpointTests {
 
   @Test
   void whenConcurrentCallsExceedsLimit_thenOnlyProcessAllowed(MockServerClient mockServer) {
-    HttpRequest mockRequest = HttpRequest.request("/remote/ping")
-        .withMethod("GET")
-        .withHeader("Accept-Encoding", "gzip")
-        .withHeader("Accept", "application/json")
-        .withKeepAlive(true);
-
-    HttpResponse mockResponse = HttpResponse.response()
-        .withHeader("Content-Type", "application/json")
-        .withBody("{\"timestamp\" : \""+ LocalDateTime.now().toString() +"\"}");
-
-    mockServer.when(mockRequest).respond(mockResponse.withDelay(TimeUnit.SECONDS, 2));
+    mockServer.when(REMOTE_PING_REQUEST).respond(REMOTE_PING_RESPONSE.withDelay(TimeUnit.SECONDS, 2));
 
     WebClient webClient = webClients.clone().baseUrl("http://localhost:8080/ping").build();
 
@@ -90,7 +80,7 @@ class PingEndpointTests {
         .expectErrorSatisfies(error -> assertThat(error).isInstanceOf(WebClientResponseException.ServiceUnavailable.class))
         .verify(Duration.ofSeconds(5));
 
-    mockServer.verify(mockRequest, VerificationTimes.exactly(3));
+    mockServer.verify(REMOTE_PING_REQUEST, VerificationTimes.exactly(3));
   }
 
   @Test
