@@ -27,6 +27,7 @@ import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * @author zakyalvan
@@ -57,7 +58,8 @@ public class PingEndpointConfiguration {
         .transformDeferred(disabled.test(request) ? Function.identity() : BulkheadOperator.of(bulkhead))
         .flatMap(pong -> ServerResponse.ok().bodyValue(pong))
         .onErrorResume(BulkheadFullException.class, error -> ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE).build())
-        .doOnSubscribe(subscription -> log.info("Handle ping request from client"));
+        .subscribeOn(Schedulers.newSingle("single-scheduler"))
+        .doOnSubscribe(subscription -> log.info("Handle ping request with correlation : '{}'", request.queryParam("correlation").orElse("unknown")));
 
     return RouterFunctions.route(predicate, handler);
   }
